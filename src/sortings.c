@@ -3,12 +3,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ASCII_SIZE 256
+#define RADIX_BUCKETS 256
 
 int error = 0;
 
 void sort_bubble(char **arr, size_t size,
                  int (*comparator)(const char *, const char *)) {
+  if (size < 2) {
+    return;
+  }
+
   for (size_t i = 0; i < size; i++) {
     for (size_t j = 0; j < size - i - 1; j++) {
       if (comparator(arr[j], arr[j + 1]) > 0) {
@@ -22,6 +26,10 @@ void sort_bubble(char **arr, size_t size,
 
 void sort_insertion(char **arr, size_t size,
                     int (*comparator)(const char *, const char *)) {
+  if (size < 2) {
+    return;
+  }
+
   for (size_t i = 1; i < size; i++) {
     char *tmp = arr[i];
     int j = i - 1;
@@ -121,7 +129,7 @@ void sort_quick(char **arr, size_t size,
 
 static unsigned char get_char(const char *str, size_t pos) {
   if (!str[pos]) {
-    return 0; // Less than any real character
+    return 0; // The "\0" symbol
   }
   return (unsigned char)str[pos];
 }
@@ -134,7 +142,7 @@ static void msd_sort(char **arr, size_t left, size_t right, size_t depth,
   }
 
   // Count occurrences of each character [0..255] at the given depth
-  int count[ASCII_SIZE] = {0};
+  int count[RADIX_BUCKETS] = {0};
   for (size_t i = left; i < right; i++) {
     unsigned char c = get_char(arr[i], depth);
     count[c]++;
@@ -147,15 +155,15 @@ static void msd_sort(char **arr, size_t left, size_t right, size_t depth,
   }
 
   // Turn count into prefix sums. boundary[i] tells how many elements <= i
-  int boundary[ASCII_SIZE];
+  int boundary[RADIX_BUCKETS];
   if (direction == 1) { // asc
     boundary[0] = count[0];
-    for (int i = 1; i < ASCII_SIZE; i++) {
+    for (int i = 1; i < RADIX_BUCKETS; i++) {
       boundary[i] = boundary[i - 1] + count[i];
     }
   } else { // des
-    boundary[ASCII_SIZE - 1] = count[ASCII_SIZE - 1];
-    for (int i = ASCII_SIZE - 2; i >= 0; i--) {
+    boundary[RADIX_BUCKETS - 1] = count[RADIX_BUCKETS - 1];
+    for (int i = RADIX_BUCKETS - 2; i >= 0; i--) {
       boundary[i] = boundary[i + 1] + count[i];
     }
   }
@@ -170,15 +178,15 @@ static void msd_sort(char **arr, size_t left, size_t right, size_t depth,
   }
 
   // Place elements into tmp
-  int bucketPos[ASCII_SIZE];
+  int bucketPos[RADIX_BUCKETS];
   if (direction == 1) { // asc
     bucketPos[0] = boundary[0] - 1;
-    for (int i = 1; i < ASCII_SIZE; i++) {
+    for (int i = 1; i < RADIX_BUCKETS; i++) {
       bucketPos[i] = boundary[i] - 1;
     }
   } else { // des
-    bucketPos[ASCII_SIZE - 1] = 0;
-    for (int i = ASCII_SIZE - 2; i >= 0; i--) {
+    bucketPos[RADIX_BUCKETS - 1] = 0;
+    for (int i = RADIX_BUCKETS - 2; i >= 0; i--) {
       bucketPos[i] = bucketPos[i + 1] + count[i + 1];
     }
   }
@@ -199,7 +207,7 @@ static void msd_sort(char **arr, size_t left, size_t right, size_t depth,
   // Recursively sort each segment by the next character depth
   if (direction == 1) {
     int prev = 0;
-    for (int c = 0; c < ASCII_SIZE; c++) {
+    for (int c = 0; c < RADIX_BUCKETS; c++) {
       int curr = boundary[c];
       if (curr > prev) {
         msd_sort(arr, left + prev, left + curr, depth + 1, direction);
@@ -208,7 +216,7 @@ static void msd_sort(char **arr, size_t left, size_t right, size_t depth,
     }
   } else {
     int prev = 0;
-    for (int c = ASCII_SIZE - 1; c >= 0; c--) {
+    for (int c = RADIX_BUCKETS - 1; c >= 0; c--) {
       int curr = boundary[c];
       if (curr > prev) {
         msd_sort(arr, left + prev, left + curr, depth + 1, direction);
